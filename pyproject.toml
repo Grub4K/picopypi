@@ -1,0 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "picopypi"
+version = "0.1.0"
+description = "PICO PYthon Package Incubator"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+picopypi = "picopypi.main:main"
