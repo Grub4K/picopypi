@@ -13,6 +13,6 @@ USER builder
 WORKDIR /home/builder
 
 COPY ./src/picopypi/command/build_armv7l.py /entrypoint.py
-ENTRYPOINT [ "/usr/bin/python3", "/entrypoint.py" ]
+ENTRYPOINT [ "/opt/python/cp310-cp310/bin/python", "/entrypoint.py" ]
 
 VOLUME [ "/home/builder/repos" ]

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import inspect
+import types
 
 import picopypi.command.build_armv7l
 import picopypi.command.render
@@ -8,15 +10,22 @@ import picopypi.command.render
 
 def main():
     parser = argparse.ArgumentParser(
-        prog=__name__.partition(".")[0],
+        prog="picopypi",
+        description="PICO PYthon Package Incubator",
+        suggest_on_error=True,
     )
-    subparsers = parser.add_subparsers(dest="action", required=True)
+    subparsers = parser.add_subparsers(
+        title="subcommands",
+        dest="action",
+        required=True,
+        metavar="<subcommand>",
+    )
 
     parsers = {}
 
-    def _add_parser(module):
+    def _add_parser(module: types.ModuleType):
         name = module.__name__.rpartition(".")[2].replace("_", "-")
-        parser = subparsers.add_parser(name)
+        parser = subparsers.add_parser(name, help=inspect.getdoc(module))
         module.configure_parser(parser)
         parsers[name] = module.run
 

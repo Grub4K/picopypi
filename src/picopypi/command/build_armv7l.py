@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+"""
+Build a armv7l wheel using Docker.
+
+This file will be copied into the image and ran as the entrypoiny using Python 3.10.
+The Docker instance should support running linux/arm/v7 images.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -21,14 +29,27 @@ ALLOWED_DIGEST_RE = re.compile(
 )
 
 
-def _revision(value: str):
+INTERPRETERS = [
+    "cp38",
+    "cp39",
+    "cp310",
+    "cp311",
+    "cp312",
+    "cp313",
+    "cp313t",
+    "cp314",
+    "cp314t",
+]
+
+
+def revision(value: str):
     if not ALLOWED_DIGEST_RE.fullmatch(value):
         msg = f"Invalid digest: {value!r}"
         raise ValueError(msg)
     return value
 
 
-def _repository(value: str):
+def repository(value: str):
     if "/" not in value:
         msg = f"Invalid repository: {value!r}"
         raise ValueError(msg)
@@ -37,23 +58,31 @@ def _repository(value: str):
     return value
 
 
+def _python_from_abi(abi: str):
+    version = abi.rstrip("tm")
+    return f"/opt/python/{version}-{abi}/bin/python"
+
+
 def configure_parser(parser: argparse.ArgumentParser):
     parser.add_argument(
         "repository",
         help=(
             "a git repository url. "
-            "Use yt-dlp/picopypi (for GitHub) or full url for other git providers"
+            "If hosted on GitHub, the short form (yt-dlp/picopypi) can be used"
         ),
-        type=_repository,
+        type=repository,
     )
     parser.add_argument(
         "revision",
         help="sha1/sha256 revision to checkout",
-        type=_revision,
+        type=revision,
     )
     parser.add_argument(
-        "--python",
-        help="python version to build for",
+        "--abi",
+        help="abi version to build for (default: %(default)s)",
+        choices=INTERPRETERS,
+        metavar="...",
+        default="cp3120",
     )
     parser.add_argument(
         "args",
@@ -64,7 +93,7 @@ def configure_parser(parser: argparse.ArgumentParser):
 
 def run(args: argparse.Namespace):
     if os.environ.get(ENV_VAR_NAME) is None:
-        # We strip the `picopypi armv7l` part and run this file directly
+        # Strip `picopypi armv7l` args and rerun this file using docker
         remaining = sys.argv[2:]
         _run_cmd(
             [
@@ -80,27 +109,28 @@ def run(args: argparse.Namespace):
                 *remaining,
             ]
         )
+        return
 
-    else:
-        build_wheel_armv7l(
-            args.repository,
-            args.revision,
-            python=args.python,
-            args=args.args or None,
-        )
+    build_wheel_armv7l(
+        args.repository,
+        args.revision,
+        _python_from_abi(args.abi),
+        args=args.args or None,
+    )
 
 
 def build_wheel_armv7l(
     url: str,
     revision: str,
+    python: str,
     /,
-    python: str | None = None,
     args: list[str] | None = None,
 ):
     repository = pathlib.PurePosixPath(url).name
+
     msg = f"Building repository {repository}"
     if python is not None:
-        msg += f" for Python {python}"
+        msg += f" using Python {python}"
     print(msg)
 
     if args is None:
@@ -110,7 +140,6 @@ def build_wheel_armv7l(
             f"--config-setting=--build-option=build {shlex.join(args)}",
         )
 
-    python_arg = () if python is None else ("--python", python, "--managed-python")
     git_dir = REPOS / repository
 
     if not git_dir.is_dir():
@@ -126,7 +155,8 @@ def build_wheel_armv7l(
             "build",
             "--wheel",
             f"--out-dir={DIST}",
-            *python_arg,
+            "--python",
+            python,
             *config_setting_arg,
             str(git_dir),
         ]

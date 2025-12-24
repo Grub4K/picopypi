@@ -1,12 +1,16 @@
 #!/usr/bin/env python
+"""
+Render all released wheels into repository API html files to be hosted by GitHub Pages.
+"""
+
 from __future__ import annotations
 
 import argparse
 import collections
 import collections.abc
 import contextlib
+import dataclasses
 import datetime as dt
-import functools
 import hashlib
 import html
 import itertools
@@ -14,10 +18,10 @@ import json
 import pathlib
 import re
 import shutil
-import typing
 import urllib.request
 
-import packaging.version
+import packaging.tags
+import packaging.utils
 
 HTML_TEMPLATE = """\
 <!DOCTYPE html>
@@ -68,26 +72,54 @@ def _natural_sort_key(s: str):
     )
 
 
-class Package(typing.NamedTuple):
+def _sort_tag(tag: packaging.tags.Tag):
+    interpreter = tag.interpreter[:2]
+    version = tag.interpreter[2:]
+    variant = ""
+    for index, char in enumerate(version):
+        if not char.isdecimal():
+            version = version[:index]
+            variant[index:]
+            break
+
+    major, minor = int(version[0]), int(version[1:])
+    return (interpreter, major, minor, variant)
+
+
+@dataclasses.dataclass
+class Package:
     name: str
     url: str
     hash: str
     datetime: dt.datetime
 
-    @functools.lru_cache()
-    def sort_key(self, /):
-        name, _, py, abi, _ = self.name.split("-", 4)
-        return (
-            name,
-            _InverseSorter(self.version()),
-            _natural_sort_key(py),
-            _natural_sort_key(abi),
+    def __post_init__(
+        self,
+    ):
+        parsed = packaging.utils.parse_wheel_filename(self.name)
+        self._package, self._version, _, self._tags = parsed
+        self._sort_key = (
+            self.package,
+            _InverseSorter(self.version),
+            tuple(sorted(set(map(_sort_tag, self._tags)))),
         )
 
-    @functools.lru_cache()
+    @property
+    def package(self, /):
+        return self._package
+
+    @property
     def version(self, /):
-        _, version, _ = self.name.split("-", 2)
-        return packaging.version.parse(version)
+        return self._version
+
+    @property
+    def tags(self, /):
+        return self._tags
+
+    def __lt__(self, other, /):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self._sort_key < other._sort_key
 
 
 def load_from_github_api(url: str):
@@ -160,7 +192,7 @@ def render_html(
                 PACKAGE_TEMPLATE.format(
                     name=html.escape(package),
                     href=html.escape(package, quote=True),
-                    latest=html.escape(str(files[0].version()), quote=True),
+                    latest=html.escape(str(files[0].version), quote=True),
                 )
                 for package, files in packages.items()
             ),
