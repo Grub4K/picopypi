@@ -148,7 +148,17 @@ def build_wheel_armv7l(
     else:
         _run_cmd(["git", "-C", str(git_dir), "fetch"])
 
-    _run_cmd(["git", "-C", str(git_dir), "checkout", revision])
+    _run_cmd(
+        [
+            "git",
+            "-C",
+            str(git_dir),
+            "-c",
+            "advice.detachedHead=false",
+            "checkout",
+            revision,
+        ]
+    )
     _run_cmd(
         [
             "uv",
