@@ -87,7 +87,7 @@ def _sort_tag(tag: packaging.tags.Tag):
 
 
 @dataclasses.dataclass
-class Package:
+class Wheel:
     name: str
     url: str
     hash: str
@@ -135,32 +135,29 @@ def load_from_github_api(url: str):
     with contextlib.closing(request) as file:
         data = json.load(file)
 
-    packages: dict[str, list[Package]] = collections.defaultdict(list)
+    packages: dict[str, list[Wheel]] = collections.defaultdict(list)
     for release in data:
-        package, _, _ = release["name"].partition("-")
-
         for asset in release["assets"] or ():
             algorithm, _, digest = asset["digest"].partition(":")
             if algorithm not in hashlib.algorithms_guaranteed:
                 msg = f"unsupported hash format: {algorithm}"
                 raise ValueError(msg)
 
-            packages[package].append(
-                Package(
-                    name=asset["name"],
-                    url=asset["browser_download_url"],
-                    hash=f"{algorithm}={digest}",
-                    datetime=dt.datetime.fromisoformat(asset["created_at"]).astimezone(
-                        dt.UTC
-                    ),
-                )
+            wheel = Wheel(
+                name=asset["name"],
+                url=asset["browser_download_url"],
+                hash=f"{algorithm}={digest}",
+                datetime=dt.datetime.fromisoformat(asset["created_at"]).astimezone(
+                    dt.UTC
+                ),
             )
+            packages[wheel.package].append(wheel)
 
     return packages
 
 
 def render_html(
-    packages: collections.abc.Mapping[str, collections.abc.Iterable[Package]],
+    packages: collections.abc.Mapping[str, collections.abc.Iterable[Wheel]],
     target: pathlib.Path,
 ):
     packages = {name: sorted(packages[name]) for name in sorted(packages)}
