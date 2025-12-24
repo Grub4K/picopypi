@@ -18,6 +18,7 @@ import json
 import pathlib
 import re
 import shutil
+import sys
 import urllib.request
 
 import packaging.tags
@@ -138,20 +139,30 @@ def load_from_github_api(url: str):
     packages: dict[str, list[Wheel]] = collections.defaultdict(list)
     for release in data:
         for asset in release["assets"] or ():
+            if not asset["name"].endswith(".whl"):
+                continue
+
             algorithm, _, digest = asset["digest"].partition(":")
             if algorithm not in hashlib.algorithms_guaranteed:
-                msg = f"unsupported hash format: {algorithm}"
-                raise ValueError(msg)
+                print(f"unsupported hash format: {algorithm!r}", file=sys.stderr)
+                continue
 
-            wheel = Wheel(
-                name=asset["name"],
-                url=asset["browser_download_url"],
-                hash=f"{algorithm}={digest}",
-                datetime=dt.datetime.fromisoformat(asset["created_at"]).astimezone(
-                    dt.UTC
-                ),
-            )
-            packages[wheel.package].append(wheel)
+            try:
+                wheel = Wheel(
+                    name=asset["name"],
+                    url=asset["browser_download_url"],
+                    hash=f"{algorithm}={digest}",
+                    datetime=dt.datetime.fromisoformat(asset["created_at"]).astimezone(
+                        dt.UTC
+                    ),
+                )
+
+            except ValueError as error:
+                print(error, file=sys.stderr)
+                continue
+
+            else:
+                packages[wheel.package].append(wheel)
 
     return packages
 
@@ -182,6 +193,7 @@ def render_html(
             newline="\n",
         )
 
+    target.mkdir(parents=True, exist_ok=True)
     (target / "index.html").write_text(
         HTML_TEMPLATE.format(
             title=html.escape("Available packages"),
