@@ -1,2 +1,2 @@
-# pipypi
+# picopypi
 PICO PYthon Package Incubator
