@@ -14,3 +14,40 @@ dependencies = [
 
 [project.scripts]
 picopypi = "picopypi.main:main"
+
+[tool.ruff]
+required-version = "==0.14.*"
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = [
+  "C4",
+  "E",
+  "F",
+  "I",
+  "PLC",
+  "PLE",
+  "PLW",
+  "PYI",
+  "RET",
+  "RUF",
+  "SIM",
+  "TD",
+  "TID",
+  "W",
+]
+ignore = [
+  "TD003",
+  "E402",
+  "E501",
+  "PLR09",
+]
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
+force-single-line = true
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"

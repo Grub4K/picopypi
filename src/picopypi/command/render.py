@@ -76,7 +76,7 @@ class Package(typing.NamedTuple):
 
     @functools.lru_cache()
     def sort_key(self, /):
-        name, version, py, abi, _ = self.name.split("-", 4)
+        name, _, py, abi, _ = self.name.split("-", 4)
         return (
             name,
             _InverseSorter(self.version()),
