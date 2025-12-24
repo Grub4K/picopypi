@@ -13,10 +13,8 @@ import dataclasses
 import datetime as dt
 import hashlib
 import html
-import itertools
 import json
 import pathlib
-import re
 import shutil
 import sys
 import urllib.request
@@ -57,20 +55,18 @@ class _InverseSorter:
     def __lt__(self, other, /):
         if not isinstance(other, _InverseSorter):
             return NotImplemented
-        return other.obj < self.obj
+        return other.obj <= self.obj
+
+    def __eq__(self, other, /):
+        if not isinstance(other, _InverseSorter):
+            return NotImplemented
+        return other.obj == self.obj
+
+    def __hash__(self, /):
+        return hash(self.obj)
 
     def __repr__(self, /):
         return f"<{type(self).__name__} of {self.obj!r}>"
-
-
-DIGIT_RE = re.compile(r"(\d+)")
-
-
-def _natural_sort_key(s: str):
-    return tuple(
-        (int(val) if num else val)
-        for val, num in zip(DIGIT_RE.split(s), itertools.cycle((False, True)))
-    )
 
 
 def _sort_tag(tag: packaging.tags.Tag):
@@ -80,11 +76,11 @@ def _sort_tag(tag: packaging.tags.Tag):
     for index, char in enumerate(version):
         if not char.isdecimal():
             version = version[:index]
-            variant[index:]
+            variant = version[index:]
             break
 
     major, minor = int(version[0]), int(version[1:])
-    return (interpreter, major, minor, variant)
+    return (interpreter, major, minor, variant, tag.abi)
 
 
 @dataclasses.dataclass
