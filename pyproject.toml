@@ -8,7 +8,9 @@ version = "0.1.0"
 description = "PICO PYthon Package Incubator"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "packaging>=25.0",
+]
 
 [project.scripts]
 picopypi = "picopypi.main:main"

@@ -148,7 +148,9 @@ def render_html(
                     )
                     for file in files
                 ),
-            )
+            ),
+            encoding="utf-8",
+            newline="\n",
         )
 
     (target / "index.html").write_text(
@@ -162,7 +164,9 @@ def render_html(
                 )
                 for package, files in packages.items()
             ),
-        )
+        ),
+        encoding="utf-8",
+        newline="\n",
     )
 
 
@@ -179,7 +183,7 @@ def configure_parser(parser: argparse.ArgumentParser):
 
 def run(args: argparse.Namespace):
     url = f"https://api.github.com/repos/{args.repository}/releases"
-    target = pathlib.Path(args.target).parent / "pypi"
+    target = pathlib.Path(args.target).resolve()
 
     packages = load_from_github_api(url)
     render_html(packages, target)
