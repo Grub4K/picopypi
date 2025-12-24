@@ -1,0 +1,11 @@
+services:
+  build:
+    platform: linux/arm/v7
+    build: .
+    init: true
+    volumes:
+      - repos:/home/builder/repos
+      - ./dist:/home/builder/wheelhouse
+
+volumes:
+  repos:
