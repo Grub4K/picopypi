@@ -15,6 +15,7 @@ import html
 import pathlib
 import shutil
 
+import picopypi.gitutil
 import picopypi.releases
 
 HTML_TEMPLATE = """\
@@ -92,21 +93,31 @@ def render_html(
 
 def configure_parser(parser: argparse.ArgumentParser):
     parser.add_argument(
-        "repository",
-        help="github repository to read the release assets from",
+        "--repository",
+        type=picopypi.gitutil.repository,
+        help="github repository to read the release assets from (default: infer)",
     )
     parser.add_argument(
         "target",
-        help="target directory to write rendered html to",
+        nargs=argparse.OPTIONAL,
+        default="docs/",
+        help="target directory to write rendered html to (default: %(default)s)",
     )
 
 
 def run(args: argparse.Namespace):
-    packages = picopypi.releases.load_from_github_api(args.repository)
+    repository = args.repository or picopypi.gitutil.infer_repository()
+    packages = picopypi.releases.load_from_github_api(repository)
     render_html(packages, pathlib.Path(args.target).resolve())
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    configure_parser(parser)
-    run(parser.parse_args())
+    import sys
+
+    try:
+        parser = argparse.ArgumentParser()
+        configure_parser(parser)
+        run(parser.parse_args())
+    except KeyboardInterrupt:
+        print("\nERROR: interrupted by user", file=sys.stderr)
+        sys.exit(1)
