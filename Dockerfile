@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive CI=1
 USER builder
 WORKDIR /home/builder
 
-COPY ./src/picopypi/command/build_armv7l.py /entrypoint.py
+COPY ./src/picopypi/command/build_wheel.py /entrypoint.py
 ENTRYPOINT [ "/opt/python/cp310-cp310/bin/python", "/entrypoint.py" ]
 
 VOLUME [ "/home/builder/repos" ]
