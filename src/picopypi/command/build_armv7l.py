@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Build a armv7l wheel using Docker.
+Plumbing: Build a armv7l wheel using Docker.
 
 This file will be copied into the image and ran as the entrypoiny using Python 3.10.
 The Docker instance should support running linux/arm/v7 images.

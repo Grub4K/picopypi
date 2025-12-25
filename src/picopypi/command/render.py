@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """
-Render all released wheels into repository API html files to be hosted by GitHub Pages.
+Render released wheels as simple repository API HTML.
+
+Renders all wheels from release on a particular GitHub repository into
+simple repository API html files to be hosted by GitHub Pages.
 """
 
 from __future__ import annotations

@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 import argparse
-import inspect
 import types
 
 import picopypi.command.build_armv7l
 import picopypi.command.render
+
+
+def get_simple_doc(module: types.ModuleType):
+    doc = module.__doc__
+    if not doc:
+        return None
+
+    return next(line for line in doc.splitlines() if line)
 
 
 def main():
@@ -25,7 +32,7 @@ def main():
 
     def _add_parser(module: types.ModuleType):
         name = module.__name__.rpartition(".")[2].replace("_", "-")
-        parser = subparsers.add_parser(name, help=inspect.getdoc(module))
+        parser = subparsers.add_parser(name, help=get_simple_doc(module))
         module.configure_parser(parser)
         parsers[name] = module.run
 
