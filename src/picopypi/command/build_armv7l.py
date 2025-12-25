@@ -92,9 +92,23 @@ def configure_parser(parser: argparse.ArgumentParser):
 
 
 def run(args: argparse.Namespace):
+    build(
+        args.repository,
+        args.revision,
+        args.abi,
+        args=args.args or None,
+    )
+
+
+def build(
+    url: str,
+    revision: str,
+    python: str,
+    /,
+    args: list[str] | None = None,
+):
+    # Restart into docker if not already
     if os.environ.get(ENV_VAR_NAME) is None:
-        # Strip `picopypi armv7l` args and rerun this file using docker
-        remaining = sys.argv[2:]
         _run_cmd(
             [
                 "docker",
@@ -106,26 +120,17 @@ def run(args: argparse.Namespace):
                 f"{ENV_VAR_NAME}=1",
                 "--",
                 "build",
-                *remaining,
+                url,
+                revision,
+                python,
+                *(args or ()),
             ]
         )
         return
 
-    build_wheel_armv7l(
-        args.repository,
-        args.revision,
-        _python_from_abi(args.abi),
-        args=args.args or None,
-    )
+    if python in INTERPRETERS:
+        python = _python_from_abi(python)
 
-
-def build_wheel_armv7l(
-    url: str,
-    revision: str,
-    python: str,
-    /,
-    args: list[str] | None = None,
-):
     repository = pathlib.PurePosixPath(url).name
 
     msg = f"Building repository {repository}"
