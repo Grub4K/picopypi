@@ -1,21 +1,27 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import types
 
 import picopypi.command.build_armv7l
 import picopypi.command.render
 
 
-def get_simple_doc(module: types.ModuleType):
+def get_doc(module: types.ModuleType):
     doc = module.__doc__
     if not doc:
-        return None
+        return None, None
 
-    return next(line for line in doc.splitlines() if line)
+    lines = doc.splitlines()
+    for index, line in enumerate(lines):
+        if line:
+            return line, "\n".join(lines[index:])
+
+    return None, None
 
 
-def main():
+def _main():
     parser = argparse.ArgumentParser(
         prog="picopypi",
         description="PICO PYthon Package Incubator",
@@ -32,7 +38,8 @@ def main():
 
     def _add_parser(module: types.ModuleType):
         name = module.__name__.rpartition(".")[2].replace("_", "-")
-        parser = subparsers.add_parser(name, help=get_simple_doc(module))
+        help, description = get_doc(module)
+        parser = subparsers.add_parser(name, help=help, description=description)
         module.configure_parser(parser)
         parsers[name] = module.run
 
@@ -41,3 +48,11 @@ def main():
 
     args = parser.parse_args()
     parsers[args.action](args)
+
+
+def main():
+    try:
+        _main()
+    except KeyboardInterrupt:
+        print("\nERROR: interrupted by user", file=sys.stderr)
+        sys.exit(1)
