@@ -5,7 +5,7 @@ import sys
 import types
 
 import picopypi.command.build
-import picopypi.command.build_wheel
+import picopypi.command.cibuildwheel
 import picopypi.command.render
 
 
@@ -45,7 +45,7 @@ def _main():
         parsers[name] = module.run
 
     _add_parser(picopypi.command.build)
-    _add_parser(picopypi.command.build_wheel)
+    _add_parser(picopypi.command.cibuildwheel)
     _add_parser(picopypi.command.render)
 
     args = parser.parse_args()
