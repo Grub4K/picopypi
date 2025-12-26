@@ -13,11 +13,11 @@
       ],
     },
     {
-      "package": "pycryptodome",
+      "package": "pycryptodomex",
       "repository": "https://github.com/Legrandin/pycryptodome",
       "builds": [
         {
-          "revision": "cde63f8f9b64f1c8cd86249128cfd5986c2c43af",
+          "revision": "38ce5293685dea957f4e7a77451351299a6ac0c2",
           "version": "3.23.0",
           "targets": ["manylinux_armv7l"],
           "abis": ["cp310", "cp311", "cp312", "cp313", "cp314"],
