@@ -1,34 +1,26 @@
 {
-  "armv7l": [
+  "build": [
     {
-      "name": "brotli",
+      "package": "brotli",
       "repository": "https://github.com/google/brotli",
-      "revisions": [
+      "builds": [
         {
           "revision": "028fb5a23661f123017c060daa546b55cf4bde29",
           "version": "1.2.0",
-          "builds": {
-            "cp310": "cp310",
-            "cp311": "cp311",
-            "cp312": "cp312",
-            "cp313": "cp313",
-            "cp313t": "cp313t",
-            "cp314": "cp314",
-            "cp314t": "cp314t",
-          },
+          "targets": ["manylinux_armv7l"],
+          "abis": ["cp310", "cp311", "cp312", "cp313", "cp314"],
         },
       ],
     },
     {
-      "name": "pycryptodome",
+      "package": "pycryptodome",
       "repository": "https://github.com/Legrandin/pycryptodome",
-      "revisions": [
+      "builds": [
         {
           "revision": "cde63f8f9b64f1c8cd86249128cfd5986c2c43af",
           "version": "3.23.0",
-          "builds": {
-            "cp310": "abi3",
-          },
+          "targets": ["manylinux_armv7l"],
+          "abis": ["cp310", "cp311", "cp312", "cp313", "cp314"],
         },
       ],
     },
