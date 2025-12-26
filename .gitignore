@@ -2,3 +2,4 @@
 !/docs/
 !/docs/**
 !/.gitignore
+!/builds.jsonc
