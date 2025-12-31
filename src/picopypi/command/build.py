@@ -62,45 +62,53 @@ def run(args: argparse.Namespace):
     if not groups:
         print("Nothing to build!")
         return
-    count = sum(1 for group in groups for build in group.builds for _ in build.passes)
 
-    if args.dry_run:
-        for group in groups:
-            print(f"Building {group.package}")
-            for build in group.builds:
-                print(f"=> Building {build.version} ({build.revision})")
-                for build_pass in build.passes:
-                    print(
-                        f"=> => Building for {build_pass.target} with",
-                        ", ".join(abi.value for abi in build_pass.abis),
-                    )
+    targets = [
+        build_pass.target
+        for group in groups
+        for build in group.builds
+        for build_pass in build.passes
+    ]
+    targetss = len(targets)
+    native_targets = sum(1 for target in targets if target.native())
+    if not args.dry_run and not native_targets:
+        print(f"All build passes ({targetss}) have been skipped!")
         return
 
-    print(f"Build passes to be performed: {count}")
+    print(f"Build passes to be performed: {native_targets} / {targetss}")
     repos = args.repo_dir.resolve()
+    source = pathlib.Path()
     output = args.output_dir.resolve()
-    picopypi.gitutil.create_ignored_folder(repos)
-    picopypi.gitutil.create_ignored_folder(output)
+    if not args.dry_run:
+        picopypi.gitutil.create_ignored_folder(repos)
+        picopypi.gitutil.create_ignored_folder(output)
 
     for group in groups:
         print(f"Building {group.package}")
-        source = picopypi.gitutil.clone_or_fetch(repos, group.repository)
+        if not args.dry_run:
+            source = picopypi.gitutil.clone_or_fetch(repos, group.repository)
 
         for build in group.builds:
             print(f"=> Building {build.version} ({build.revision})")
-            picopypi.gitutil.checkout(source, build.revision)
+            if not args.dry_run:
+                picopypi.gitutil.checkout(source, build.revision)
 
             for build_pass in build.passes:
+                native = build_pass.target.native()
+                message = "Build" if native else "Skip (non native)"
                 print(
-                    f"=> => Building for {build_pass.target} with",
+                    f"=> => {message}: {build_pass.target} with",
                     ", ".join(abi.value for abi in build_pass.abis),
                 )
-                picopypi.command.cibuildwheel.build(
-                    source,
-                    output,
-                    build_pass.target,
-                    build_pass.abis,
-                )
+                if not native:
+                    continue
+                if not args.dry_run:
+                    picopypi.command.cibuildwheel.build(
+                        source,
+                        output,
+                        build_pass.target,
+                        build_pass.abis,
+                    )
 
 
 @dataclasses.dataclass(slots=True)

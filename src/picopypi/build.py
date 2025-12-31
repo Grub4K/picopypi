@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 import enum
+import platform
 
 
 class Abi(enum.StrEnum):
@@ -50,6 +51,9 @@ class Target(enum.StrEnum):
             self.MANYLINUX_ARM7: "linux",
             self.MACOS: "macos",
         }[self]
+
+    def native(self, /):
+        return platform.system().lower() == self.platform()
 
     def expand_configuration(self, abis: collections.abc.Iterable[Abi], /):
         for abi in abis:
