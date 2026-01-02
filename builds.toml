@@ -1,0 +1,30 @@
+[[requirements]]
+name = "setuptools"
+version = "80.9.0"
+hashes = { sha256 = "062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922" }
+
+[[builds]]
+package = "brotli"
+repository = "https://github.com/google/brotli"
+
+[[builds.revisions]]
+revision = "028fb5a23661f123017c060daa546b55cf4bde29"
+version = "1.2.0"
+targets = ["manylinux_armv7l"]
+abis = ["cp310", "cp311", "cp312", "cp313", "cp314"]
+requires = [
+    { name = "setuptools", version = "80.9.0" },
+]
+
+[[builds]]
+package = "pycryptodomex"
+repository = "https://github.com/Legrandin/pycryptodome"
+
+[[builds.revisions]]
+revision = "38ce5293685dea957f4e7a77451351299a6ac0c2"
+version = "3.23.0"
+targets = ["manylinux_armv7l"]
+abis = ["cp310", "cp311", "cp312", "cp313", "cp314"]
+requires = [
+    { name = "setuptools", version = "80.9.0" },
+]

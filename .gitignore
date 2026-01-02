@@ -2,4 +2,4 @@
 !/docs/
 !/docs/**
 !/.gitignore
-!/builds.jsonc
+!/builds.toml
