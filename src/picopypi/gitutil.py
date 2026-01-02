@@ -6,7 +6,6 @@ import re
 import subprocess
 import sys
 
-REMOTE_RE = re.compile(r"(?:https://github\.com/|git@github.com:)(\w+/\w+)(?:.git)?")
 ALLOWED_DIGEST_LENGTHS = (hashlib.sha1().digest_size, hashlib.sha256().digest_size)
 ALLOWED_DIGEST_RE = re.compile(
     "|".join(rf"[0-9a-fA-F]{{{length * 2}}}" for length in ALLOWED_DIGEST_LENGTHS)
@@ -33,9 +32,7 @@ def infer_repository() -> str:
     try:
         ref = _git(["symbolic-ref", "HEAD"])
         remote = _git(["for-each-ref", "--format=%(push:remotename)", "--", ref])
-        url = _git(["ls-remote", "--get-url", "--", remote])
-        if match := REMOTE_RE.fullmatch(url):
-            return match.group(1)
+        return _git(["ls-remote", "--get-url", "--", remote])
     except subprocess.CalledProcessError:
         pass
 

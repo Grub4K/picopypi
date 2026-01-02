@@ -7,7 +7,7 @@ name = "picopypi"
 version = "0.1.0"
 description = "PICO PYthon Package Incubator"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "packaging>=25.0",
 ]

@@ -11,6 +11,9 @@ from __future__ import annotations
 import argparse
 import os
 import pathlib
+import random
+import shlex
+import string
 import subprocess
 import sys
 
@@ -84,8 +87,23 @@ def build(
     output: pathlib.Path,
     target: picopypi.build.Target,
     abis: list[picopypi.build.Abi],
+    lockfile: str | None = None,
 ):
     # TODO(Grub4K): Add ability to pass build arguments to builder
+    args: list[str] = []
+
+    more = {}
+    if lockfile is not None:
+        randkey = "".join(random.choices(string.hexdigits, k=20))
+        file = f"/tmp/requirements-picopypi-{randkey}.txt"
+        more["CIBW_BEFORE_ALL"] = f"echo {shlex.quote(lockfile)} >{file}"
+        more["CIBW_BEFORE_BUILD"] = f"pip install --require-hashes --requirement {file}"
+        args.append("--no-isolation")
+
+    build_frontend = "build"
+    if args:
+        build_frontend += f"; args: {shlex.join(args)}"
+
     try:
         subprocess.check_call(
             ["cibuildwheel"],
@@ -95,9 +113,10 @@ def build(
                 "CIBW_PLATFORM": target.platform(),
                 "CIBW_ARCHS": target.arch(),
                 "CIBW_BUILD": " ".join(target.expand_configuration(abis)),
-                "CIBW_BUILD_FRONTEND": "build[uv]",
+                "CIBW_BUILD_FRONTEND": build_frontend,
                 "CIBW_OUTPUT_DIR": str(output),
                 "CIBW_MANYLINUX_ARMV7L_IMAGE": MANYLINUX_ARMV7L_IMAGE,
+                **more,
             },
         )
 

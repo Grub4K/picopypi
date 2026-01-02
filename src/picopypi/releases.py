@@ -7,11 +7,14 @@ import dataclasses
 import datetime as dt
 import hashlib
 import json
+import re
 import sys
 import urllib.request
 
 import packaging.tags
 import packaging.utils
+
+REMOTE_RE = re.compile(r"(?:https://github\.com/|git@github.com:)?(\w+/\w+)(?:.git)?")
 
 
 class _InverseSorter:
@@ -84,8 +87,14 @@ class Wheel:
             return NotImplemented
         return self._sort_key < other._sort_key
 
+
 def load_from_github_api(repository: str):
-    url = f"https://api.github.com/repos/{repository}/releases"
+    match = REMOTE_RE.fullmatch(repository)
+    if not match:
+        print(f"Invalid GitHub repository URL: {repository!r}", file=sys.stderr)
+        sys.exit(1)
+
+    url = f"https://api.github.com/repos/{match.group(1)}/releases"
     request = urllib.request.urlopen(
         urllib.request.Request(
             url,

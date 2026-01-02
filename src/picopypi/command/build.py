@@ -6,12 +6,12 @@ Build all missing wheels from the supplied build jsonc file.
 from __future__ import annotations
 
 import argparse
-import ast
 import collections.abc
 import dataclasses
 import itertools
 import pathlib
 import re
+import tomllib
 
 import packaging.version
 
@@ -35,9 +35,9 @@ def configure_parser(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--builds",
-        help="file to read desired builds from (default: %(default)s)",
+        help="toml file to read desired builds from (default: %(default)s)",
         type=pathlib.Path,
-        default="builds.jsonc",
+        default="builds.toml",
     )
     parser.add_argument(
         "--repo-dir",
@@ -108,6 +108,7 @@ def run(args: argparse.Namespace):
                         output,
                         build_pass.target,
                         build_pass.abis,
+                        build_pass.lockfile,
                     )
 
 
@@ -130,6 +131,7 @@ class Build:
 class BuildPass:
     target: picopypi.build.Target
     abis: list[picopypi.build.Abi]
+    lockfile: str
 
 
 def group_builds(build_infos: collections.abc.Iterable[BuildInfo]):
@@ -137,7 +139,7 @@ def group_builds(build_infos: collections.abc.Iterable[BuildInfo]):
         return build_info.package, build_info.repository
 
     def build_key(build_info: BuildInfo):
-        return build_info.version, build_info.revision
+        return build_info.version, build_info.revision, build_info.lockfile
 
     def pass_key(build_info: BuildInfo):
         return build_info.target
@@ -155,7 +157,7 @@ def group_builds(build_infos: collections.abc.Iterable[BuildInfo]):
         key=build_group_key,
     ):
         builds: list[Build] = []
-        for (version, revision), build_infos in itertools.groupby(
+        for (version, revision, lockfile), build_infos in itertools.groupby(
             group_infos,
             key=build_key,
         ):
@@ -168,6 +170,7 @@ def group_builds(build_infos: collections.abc.Iterable[BuildInfo]):
                     BuildPass(
                         target,
                         sorted(info.abi for info in pass_infos),
+                        lockfile=lockfile,
                     )
                 )
 
@@ -181,8 +184,9 @@ class BuildInfo:
     package: str
     repository: str
 
-    revision: str
     version: packaging.version.Version
+    revision: str
+    lockfile: str
 
     target: picopypi.build.Target
     abi: picopypi.build.Abi
@@ -195,20 +199,35 @@ def gather_build_infos(
     ],
     build_file: pathlib.Path,
 ):
-    string = build_file.read_text(encoding="utf-8")
-    data = ast.literal_eval(string)
+    with build_file.open("rb") as file:
+        data = tomllib.load(file)
+
+    requirements = {}
+    for requirement in data["requirements"]:
+        key = "==".join((requirement["name"], requirement["version"]))
+        hashes = [
+            f"--hash={name}:{value}" for name, value in requirement["hashes"].items()
+        ]
+        requirements[key] = hashes
 
     wheels = itertools.chain.from_iterable(releases.values())
     provided = expand_wheels(wheels)
 
-    for build_group in data["build"]:
-        package = build_group["package"]
-        repository = build_group["repository"]
-        for build in build_group["builds"]:
-            revision = build["revision"]
-            version = packaging.version.parse(build["version"])
-            targets = build["targets"]
-            abis = build["abis"]
+    for builds in data["builds"]:
+        package = builds["package"]
+        repository = builds["repository"]
+        for revision in builds["revisions"]:
+            revision_hash = revision["revision"]
+            version = packaging.version.parse(revision["version"])
+            targets = revision["targets"]
+            abis = revision["abis"]
+            requires = revision["requires"]
+
+            locks = []
+            for require in requires:
+                key = "==".join((require["name"], require["version"]))
+                locks.append(" ".join((key, *requirements[key])))
+            lockfile = "\n".join(locks)
 
             for target, abi in itertools.product(targets, abis):
                 key = _SatisfactionKey(package, version, target)
@@ -225,9 +244,10 @@ def gather_build_infos(
                         package=package,
                         version=version,
                         repository=repository,
-                        revision=revision,
+                        revision=revision_hash,
                         target=picopypi.build.Target(target),
                         abi=picopypi.build.Abi(abi),
+                        lockfile=lockfile,
                     )
 
 
