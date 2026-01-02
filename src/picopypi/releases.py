@@ -14,7 +14,7 @@ import urllib.request
 import packaging.tags
 import packaging.utils
 
-REMOTE_RE = re.compile(r"(?:https://github\.com/|git@github.com:)?(\w+/\w+)(?:.git)?")
+REMOTE_RE = re.compile(r"(?:https://github\.com/|git@github\.com:)?(\w+/\w+)(?:\.git)?")
 
 
 class _InverseSorter:
