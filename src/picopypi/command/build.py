@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Build all missing wheels from the supplied build jsonc file.
+Build all missing wheels from the supplied build toml file.
 """
 
 from __future__ import annotations
